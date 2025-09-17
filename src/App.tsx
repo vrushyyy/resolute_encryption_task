@@ -1,25 +1,42 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, { useState } from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { LoginForm } from "./components/LoginForm";
+import { SignupForm } from "./components/SignupForm";
+import { StudentForm } from "./components/StudentForm"; 
 
 function App() {
+  const [user, setUser] = useState<any>(null);
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Router>
+      <Routes>
+        {/* if logged in -> student page, else login */}
+        <Route path="/" element={user ? <Navigate to="/student" /> : <Navigate to="/login" />} />
+
+        {/* Login route */}
+        <Route path="/login" element={<LoginForm onLoginSuccess={setUser} />} />
+
+        {/* Signup route */}
+        <Route path="/signup" element={<SignupForm onSignup={() => {}} />} />
+        <Route
+  path="/student"
+  element={
+    user ? (
+      <StudentForm
+        onLogout={() => {
+          setUser(null);
+          localStorage.removeItem("user");
+          window.location.href = "/login";
+        }}
+      />
+    ) : (
+      <Navigate to="/login" />
+    )
+  }
+/>
+
+      </Routes>
+    </Router>
   );
 }
 
