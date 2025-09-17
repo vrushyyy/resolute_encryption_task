@@ -29,22 +29,25 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
       <div className="login-container">
         <h2>Welcome Back</h2>
         <form onSubmit={handleLogin}>
-          <input 
-            type="email" 
-            placeholder="Email" 
-            value={email} 
-            onChange={e => setEmail(e.target.value)} 
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
             className="form-control"
+            style={{ color: "#000" }}  
             required
           />
-          <input 
-            type="password" 
-            placeholder="Password" 
-            value={password} 
-            onChange={e => setPassword(e.target.value)} 
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
             className="form-control"
+            style={{ color: "#000" }}
             required
           />
+
           <button type="submit" className="btn-primary">Login</button>
         </form>
       </div>

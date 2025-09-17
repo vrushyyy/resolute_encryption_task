@@ -129,7 +129,7 @@
   backdrop-filter: blur(15px);
   border-radius: 20px;
   box-shadow: 0 8px 40px rgba(0, 0, 0, 0.25);
-  color: #fff;
+  color: #00000065;
   text-align: center;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
@@ -144,7 +144,7 @@
   width: 80%;
   background: rgba(255, 255, 255, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.25);
-  color: #fff;
+  color: #000000;
   border-radius: 12px;
   padding: 12px 15px;
   margin-bottom: 15px;
@@ -198,7 +198,7 @@
 
 /* Login Link */
 .signup-page span {
-  color: #ffd369;
+  color: #fd0606;
   font-weight: 500;
   cursor: pointer;
 }
@@ -287,6 +287,25 @@
     color: #1f2937; 
     background: #f9fafb; 
     border: 1px solid #d1d5db;
+}
+.form-control {
+  width: 100%;
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+  color: #000;           /* make sure text is visible */
+  background-color: #fff; /* white background */
+}
+
+.form-control::placeholder {
+  color: #888;           /* placeholder color */
+}
+input {
+  background-color: white;
+  border: 1px solid #ccc;
+  padding: 10px;
+  border-radius: 5px;
 }
 
 .modal-content input::placeholder {
