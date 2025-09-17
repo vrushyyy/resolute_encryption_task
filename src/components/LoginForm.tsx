@@ -17,7 +17,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
     try {
       const res = await API.post('/login', { email, password });
       alert("Login successful!");
-      onLoginSuccess(res.data.user);
+      onLoginSuccess(res.data.student);
       navigate('/student');
     } catch (err: any) {
       alert(err.response?.data?.error || "Login failed");
