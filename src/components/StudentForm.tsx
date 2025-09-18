@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import '../index.css';
 import API from '../api/axios';
 import { encryptLevel1, decryptLevel1 } from '../utils/crypto';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 
 interface Student {
     id: string;
@@ -49,57 +51,23 @@ export const StudentForm: React.FC<StudentListProps> = ({ onLogout }) => {
 
     const closeModal = () => setModalType(null);
 
-    // Fetch students 
+    // Fetch students
     const fetchStudents = async () => {
         try {
-            console.log('📡 Fetching students from backend...');
             const res = await API.get('/students');
-
-            console.log('📥 Received response from backend:', res.data.length, 'students');
-
             const studentsData = res.data.map((stu: any) => {
                 if (stu.payload) {
                     try {
-                        console.log('🔓 Frontend: Decrypting Level 1 for student', stu.id);
-                        
-                        // Frontend decrypts Level 1 
                         const decryptedJson = decryptLevel1(stu.payload);
                         const studentObj = JSON.parse(decryptedJson);
-                        
-                        console.log('✅ Successfully decrypted student:', studentObj.email);
-                        
                         return { id: stu.id, ...studentObj };
-                    } catch (err) {
-                        console.error(`❌ Level 1 decryption failed for ID ${stu.id}:`, err);
-                        return {
-                            id: stu.id,
-                            fullName: 'Decryption Error',
-                            email: '-',
-                            phone: '-',
-                            dob: '',
-                            gender: '-',
-                            course: '-',
-                            address: '-',
-                            password: '-',
-                        };
+                    } catch {
+                        return { id: stu.id, fullName: 'Decryption Error', email: '-', phone: '-', dob: '', gender: '-', course: '-', address: '-', password: '-' };
                     }
                 } else {
-                    console.warn('⚠️ No payload found for student:', stu.id);
-                    return {
-                        id: stu.id,
-                        fullName: 'No Data',
-                        email: '-',
-                        phone: '-',
-                        dob: '',
-                        gender: '-',
-                        course: '-',
-                        address: '-',
-                        password: '-',
-                    };
+                    return { id: stu.id, fullName: 'No Data', email: '-', phone: '-', dob: '', gender: '-', course: '-', address: '-', password: '-' };
                 }
             });
-
-            console.log('✅ Final processed students:', studentsData.length);
             setStudents(studentsData);
         } catch (err) {
             console.error('❌ Fetch error:', err);
@@ -108,150 +76,161 @@ export const StudentForm: React.FC<StudentListProps> = ({ onLogout }) => {
 
     useEffect(() => { fetchStudents(); }, []);
 
-    // Add student with Level 1 encryption
     const addStudent = async () => {
+        const isEmpty = Object.values(formData).some(value => !value.trim());
+        if (isEmpty) {
+            toast.error('❌ Please fill in all fields before adding a student');
+            return;
+        }
+
         try {
-            console.log('🔐 Frontend: Applying Level 1 encryption to student data');
-            
-            // Frontend Level 1 encryption
             const jsonData = JSON.stringify(formData);
             const level1EncryptedPayload = encryptLevel1(jsonData);
-            
-            console.log('📤 Sending Level 1 encrypted data to backend');
-
             await API.post('/register', { payload: level1EncryptedPayload });
-            
-            console.log('✅ Student added successfully with 2-level encryption');
             fetchStudents();
             closeModal();
-        } catch (err) {
-            console.error('❌ Error adding student:', err);
-            alert('Error adding student');
+            toast.success('✅ Student added successfully');
+        } catch {
+            toast.error('❌ Error adding student');
         }
     };
 
-    // Update student 
     const updateStudent = async () => {
         if (!currentStudent) return;
+
+        const isEmpty = Object.values(formData).some(value => !value.trim());
+        if (isEmpty) {
+            toast.error('❌ Please fill in all fields before updating');
+            return;
+        }
+
         try {
-            console.log('🔐 Frontend: Applying Level 1 encryption for update');
-            
             const jsonData = JSON.stringify(formData);
             const level1EncryptedPayload = encryptLevel1(jsonData);
-
             await API.put(`/${currentStudent.id}`, { payload: level1EncryptedPayload });
-            
-            console.log('✅ Student updated successfully with 2-level encryption');
             fetchStudents();
             closeModal();
-        } catch (err) {
-            console.error('❌ Error updating student:', err);
-            alert('Error updating student');
+            toast.success('✅ Student updated successfully');
+        } catch {
+            toast.error('❌ Error updating student');
         }
     };
 
-    // Delete student
     const deleteStudent = async () => {
         if (!currentStudent) return;
+
         try {
             await API.delete(`/${currentStudent.id}`);
-            console.log('🗑️ Student deleted successfully');
             fetchStudents();
             closeModal();
-        } catch (err) {
-            console.error('❌ Error deleting student:', err);
-            alert('Error deleting student');
+            toast.success('✅ Student deleted successfully');
+        } catch {
+            toast.error('❌ Error deleting student');
         }
     };
 
+
     return (
-        <div className="student-page">
-            <nav className="student-navbar">
-                <div className="navbar-brand">
-                    Student Panel 
-                    <small style={{marginLeft: '10px', fontSize: '12px', opacity: 0.8}}>
-                        🔐 2-Level Encryption Active
-                    </small>
+        <div className="min-h-screen bg-gray-100">
+            {/* Navbar */}
+            <nav className="flex items-center justify-between bg-indigo-600 p-4 text-white">
+                <div className="font-bold text-lg">
+                    Student Panel <span className="ml-2 text-sm opacity-80">🔐 2-Level Encryption</span>
                 </div>
-                <button className="btn-logout" onClick={onLogout}>Logout</button>
+                <button className="bg-red-500 hover:bg-red-600 px-3 py-1 rounded-md text-sm" onClick={onLogout}>
+                    Logout
+                </button>
             </nav>
 
-            <div className="student-container">
-                <div className="d-flex justify-content-between align-items-center mb-3">
-                    <h2>📋 Students (2-Level Encrypted)</h2>
-                    <button className="btn-primary small-btn" onClick={openAddModal}>➕ Add Student</button>
+            {/* Container */}
+            <div className="max-w-6xl mx-auto p-6">
+                <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-xl font-semibold">📋 Students</h2>
+                    <button className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm" onClick={openAddModal}>
+                        ➕ Add Student
+                    </button>
                 </div>
 
-                <table className="table">
-                    <thead>
-                        <tr>
-                            <th>Full Name</th>
-                            <th>Email</th>
-                            <th>Phone</th>
-                            <th>DOB</th>
-                            <th>Gender</th>
-                            <th>Course</th>
-                            <th>Address</th>
-                            <th className="text-center">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {students.map(student => (
-                            <tr key={student.id}>
-                                <td>{student.fullName}</td>
-                                <td>{student.email}</td>
-                                <td>{student.phone}</td>
-                                <td>{student.dob}</td>
-                                <td>{student.gender}</td>
-                                <td>{student.course}</td>
-                                <td>{student.address}</td>
-                                <td className="text-center">
-                                    <button className="btn-edit small-btn me-2" onClick={() => openEditModal(student)}>✏️ Edit</button>
-                                    <button className="btn-delete small-btn" onClick={() => openDeleteModal(student)}>🗑️ Delete</button>
-                                </td>
+                {/* Table */}
+                <div className="overflow-x-auto bg-white shadow rounded-lg">
+                    <table className="min-w-full table-auto text-sm">
+                        <thead className="bg-gray-200">
+                            <tr>
+                                <th className="px-4 py-2 text-left">Full Name</th>
+                                <th className="px-4 py-2 text-left">Email</th>
+                                <th className="px-4 py-2 text-left">Phone</th>
+                                <th className="px-4 py-2 text-left">DOB</th>
+                                <th className="px-4 py-2 text-left">Gender</th>
+                                <th className="px-4 py-2 text-left">Course</th>
+                                <th className="px-4 py-2 text-left">Address</th>
+                                <th className="px-4 py-2 text-center">Action</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {students.map(student => (
+                                <tr key={student.id} className="border-t">
+                                    <td className="px-4 py-2">{student.fullName}</td>
+                                    <td className="px-4 py-2">{student.email}</td>
+                                    <td className="px-4 py-2">{student.phone}</td>
+                                    <td className="px-4 py-2">{student.dob}</td>
+                                    <td className="px-4 py-2">{student.gender}</td>
+                                    <td className="px-4 py-2">{student.course}</td>
+                                    <td className="px-4 py-2">{student.address}</td>
+                                    <td className="px-4 py-2 text-center">
+                                        <button className="bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 rounded mr-2 text-xs" onClick={() => openEditModal(student)}>✏️ Edit</button>
+                                        <button className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 mt-1 rounded text-xs" onClick={() => openDeleteModal(student)}>🗑️ Delete</button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             {/* Modal */}
             {modalType && (
-                <div className="modal-overlay">
-                    <div className="modal-content">
+                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40">
+                    <div className="bg-white p-6 rounded-lg shadow-lg w-96">
                         {modalType === 'add' && (
                             <>
-                                <h3>➕ Add New Student</h3>
+                                <h3 className="text-lg font-semibold mb-4">➕ Add New Student</h3>
                                 <StudentFormFields formData={formData} handleChange={handleChange} />
-                                <div className="modal-actions">
-                                    <button className="btn-cancel" onClick={closeModal}>Cancel</button>
-                                    <button className="btn-primary" onClick={addStudent}>Save with 2-Level Encryption</button>
+                                <div className="flex justify-end gap-2 mt-4">
+                                    <button className="bg-gray-300 px-3 py-1 rounded" onClick={closeModal}>Cancel</button>
+                                    <button className="bg-indigo-600 text-white px-3 py-1 rounded hover:bg-indigo-700" onClick={addStudent}>
+                                        Save
+                                    </button>
                                 </div>
                             </>
                         )}
                         {modalType === 'edit' && (
                             <>
-                                <h3>✏️ Edit Student</h3>
+                                <h3 className="text-lg font-semibold mb-4">✏️ Edit Student</h3>
                                 <StudentFormFields formData={formData} handleChange={handleChange} />
-                                <div className="modal-actions">
-                                    <button className="btn-cancel" onClick={closeModal}>Cancel</button>
-                                    <button className="btn-primary" onClick={updateStudent}>Update with 2-Level Encryption</button>
+                                <div className="flex justify-end gap-2 mt-4">
+                                    <button className="bg-gray-300 px-3 py-1 rounded" onClick={closeModal}>Cancel</button>
+                                    <button className="bg-indigo-600 text-white px-3 py-1 rounded hover:bg-indigo-700" onClick={updateStudent}>
+                                        Update
+                                    </button>
                                 </div>
                             </>
                         )}
                         {modalType === 'delete' && currentStudent && (
                             <>
-                                <h3>🗑️ Delete Confirmation</h3>
+                                <h3 className="text-lg font-semibold mb-2">🗑️ Delete Confirmation</h3>
                                 <p>Are you sure you want to delete <b>{currentStudent.fullName}</b>?</p>
-                                <div className="modal-actions">
-                                    <button className="btn-cancel" onClick={closeModal}>Cancel</button>
-                                    <button className="btn-delete" onClick={deleteStudent}>Yes, Delete</button>
+                                <div className="flex justify-end gap-2 mt-4">
+                                    <button className="bg-gray-300 px-3 py-1 rounded" onClick={closeModal}>Cancel</button>
+                                    <button className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700" onClick={deleteStudent}>
+                                        Yes, Delete
+                                    </button>
                                 </div>
                             </>
                         )}
                     </div>
                 </div>
             )}
+            <ToastContainer position="top-center" autoClose={3000} />
         </div>
     );
 };
@@ -263,23 +242,22 @@ interface FormFieldsProps {
 
 const StudentFormFields: React.FC<FormFieldsProps> = ({ formData, handleChange }) => (
     <>
-        <div className="form-row">
-            <input type="text" name="fullName" placeholder="Full Name" value={formData.fullName} onChange={handleChange} className="form-control" />
-            <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} className="form-control" />
+        <div className="flex gap-2 mb-2">
+            <input type="text" name="fullName" placeholder="Full Name" value={formData.fullName} onChange={handleChange} className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
         </div>
-        <div className="form-row">
-            <input type="text" name="phone" placeholder="Phone" value={formData.phone} onChange={handleChange} className="form-control" />
-            <input type="date" name="dob" placeholder="DOB" value={formData.dob} onChange={handleChange} className="form-control" />
+        <div className="flex gap-2 mb-2">
+            <input type="text" name="phone" placeholder="Phone" value={formData.phone} onChange={handleChange} className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            <input type="date" name="dob" placeholder="DOB" value={formData.dob} onChange={handleChange} className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
         </div>
-        <div className="form-row">
-            <select name="gender" value={formData.gender} onChange={handleChange} className="form-control">
+        <div className="flex gap-2 mb-2">
+            <select name="gender" value={formData.gender} onChange={handleChange} className="flex-1 border rounded px-3 py-2 text-sm">
                 <option value="">Select Gender</option>
                 <option value="Male">Male</option>
                 <option value="Female">Female</option>
                 <option value="Other">Other</option>
             </select>
-
-            <select name="course" value={formData.course} onChange={handleChange} className="form-control">
+            <select name="course" value={formData.course} onChange={handleChange} className="flex-1 border rounded px-3 py-2 text-sm">
                 <option value="">Select Course</option>
                 <option value="Angular">Angular</option>
                 <option value="Java">Java</option>
@@ -288,10 +266,9 @@ const StudentFormFields: React.FC<FormFieldsProps> = ({ formData, handleChange }
                 <option value="NodeJS">NodeJS</option>
             </select>
         </div>
-
-        <div className="form-row">
-            <input type="text" name="address" placeholder="Address" value={formData.address} onChange={handleChange} className="form-control full-width" />
-            <input type="password" name="password" placeholder="Password" value={formData.password} onChange={handleChange} className="form-control full-width" />
+        <div className="flex flex-col gap-2">
+            <input type="text" name="address" placeholder="Address" value={formData.address} onChange={handleChange} className="w-full border rounded px-3 py-2 text-sm" />
+            <input type="password" name="password" placeholder="Password" value={formData.password} onChange={handleChange} className="w-full border rounded px-3 py-2 text-sm" />
         </div>
     </>
 );

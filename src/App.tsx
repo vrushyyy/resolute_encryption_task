@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { LoginForm } from "./components/LoginForm";
 import { SignupForm } from "./components/SignupForm";
@@ -6,18 +6,37 @@ import { StudentForm } from "./components/StudentForm";
 
 function App() {
   const [user, setUser] = useState<any>(null);
+  useEffect(() => {
+    const savedUser = localStorage.getItem("user");
+    if (savedUser) setUser(JSON.parse(savedUser));
+  }, []);
 
   return (
     <Router>
       <Routes>
-        {/* if logged in -> student page, else login */}
-        <Route path="/" element={user ? <Navigate to="/student" /> : <Navigate to="/login" />} />
+        <Route path="/" element={<Navigate to="/signup" />} />
+        {/* Signup route */}
+        <Route
+          path="/signup"
+          element={
+            <SignupForm
+              onSignup={() => {
+                window.location.href = "/login";
+              }}
+            />
+          }
+        />
 
         {/* Login route */}
-        <Route path="/login" element={<LoginForm onLoginSuccess={setUser} />} />
+        <Route
+          path="/login"
+          element={<LoginForm onLoginSuccess={(u: any) => {
+            setUser(u);
+            localStorage.setItem("user", JSON.stringify(u));
+          }} />}
+        />
 
-        {/* Signup route */}
-        <Route path="/signup" element={<SignupForm onSignup={() => { }} />} />
+        {/* Student route */}
         <Route
           path="/student"
           element={
@@ -34,7 +53,6 @@ function App() {
             )
           }
         />
-
       </Routes>
     </Router>
   );
